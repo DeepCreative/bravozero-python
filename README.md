@@ -11,25 +11,76 @@ pip install bravozero
 ## Quick Start
 
 ```python
-from bravozero import Client, Decision
+from bravozero import Client
 
 # Initialize client
-client = Client(
-    api_key="your-api-key",
-    agent_id="your-agent-id"
-)
+client = Client(api_key="your-api-key")
 
+# Check system health
+health = client.governance.get_health()
+print(f"System: {health.state}, Omega: {health.omega_score}")
+```
+
+## Governance Examples
+
+### Evaluate Actions
+
+```python
 # Evaluate an action against the constitution
-result = client.constitution.evaluate(
-    action="read_file",
-    context={"path": "/project/src/main.py"}
+result = client.governance.evaluate(
+    agent_id="agent-123",
+    action="Generate a summary of the user's document",
+    context={"user_id": "user-456"}
 )
 
-if result.decision == Decision.PERMIT:
+if result.decision == "allow":
     print("Action allowed!")
-else:
+    perform_action()
+elif result.decision == "deny":
     print(f"Denied: {result.reasoning}")
+elif result.decision == "escalate":
+    print("Requires human review")
+```
 
+### Monitor Omega Score
+
+```python
+# Get current system alignment
+omega = client.governance.get_omega()
+print(f"Omega Score: {omega.omega:.2f}")
+print(f"Trend: {omega.trend}")
+
+for name, score in omega.components.items():
+    print(f"  {name}: {score:.2f}")
+```
+
+### Submit Governance Proposals
+
+```python
+# Submit a proposal for new rule
+proposal = client.governance.submit_proposal(
+    title="Add data retention rule",
+    description="Require agents to respect data retention preferences",
+    category="rule"
+)
+
+print(f"Proposal {proposal.proposal_id} submitted")
+print(f"Voting ends: {proposal.voting_ends_at}")
+```
+
+### Check Active Alerts
+
+```python
+# Get system alerts
+alerts = client.governance.get_alerts()
+
+for alert in alerts.alerts:
+    print(f"[{alert['severity']}] {alert['title']}")
+```
+
+## Memory Examples
+
+```python
 # Store a memory
 memory = client.memory.record(
     content="User prefers TypeScript",
@@ -45,7 +96,11 @@ results = client.memory.query(
 
 for match in results.matches:
     print(f"[{match.relevance:.2f}] {match.memory.content}")
+```
 
+## VFS Examples
+
+```python
 # Access files via VFS
 files = client.bridge.list_files("/project/src")
 content = client.bridge.read_file("/project/src/main.py")
@@ -57,7 +112,10 @@ content = client.bridge.read_file("/project/src/main.py")
 from bravozero import AsyncClient
 
 async with AsyncClient(api_key="your-key") as client:
-    result = await client.constitution.evaluate(action="read_file")
+    result = await client.governance.evaluate(
+        agent_id="agent-123",
+        action="read_file"
+    )
     print(result.decision)
 ```
 
@@ -68,13 +126,13 @@ Set environment variables:
 ```bash
 export BRAVOZERO_API_KEY="your-api-key"
 export BRAVOZERO_AGENT_ID="your-agent-id"
-export BRAVOZERO_PRIVATE_KEY_PATH="~/.bravozero/private.pem"
 ```
 
 ## Documentation
 
 - [Quickstart Guide](https://docs.bravozero.ai/getting-started)
-- [API Reference](https://docs.bravozero.ai/api)
+- [Governance Integration](https://docs.bravozero.ai/guides/governance-integration)
+- [API Reference](https://docs.bravozero.ai/api/governance-api)
 - [Examples](./examples/)
 
 ## License
